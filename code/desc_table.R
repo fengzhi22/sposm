@@ -1,27 +1,31 @@
-# create a function
-desc_table <- function(df, funcs){
- #df should be a dataframe
-  if (class(df) != "data.frame") stop("first argument should be a data frame")
- #funcs should be a vector of functions
-  if (class(funcs) != "list") stop("second argument should be a vector of functions")
-  if (all(sapply(funcs, is.function)) == 0) stop("not all elements of funcs are functions")
- #returns a data frame
-  ds <- data.frame(matrix(NA, nrow = sum(sapply(df,is.numeric)), ncol = length(funcs)))
-  for (i in 1:length(funcs)) {
-    ds[,i] <- unlist(lapply(df[sapply(df, is.numeric)],funcs[[i]]))
+desc_table <- function(df, funcs = c(n = function(x) sum(is.finite(x)), 
+                                     mean = mean, sd = sd, min = min, 
+                                     q25 = function(x) quantile(x, 0.25), 
+                                     median = median, 
+                                     q75 = function(x) quantile(x, 0.75), 
+                                     max = max)) {
+  if (is.null(df) || !is.data.frame(df)) stop("df needs to be a data frame")
+  if (nrow(df) < 1) stop("df needs to be a non-empty data frame")
+  if (sum(sapply(df, is.numeric)) + sum(sapply(df, is.logical)) == 0)
+    stop("df needs to contain at least one numeric or logical variable")
+  
+  if(!is.vector(funcs)) 
+    stop(paste("funcs needs to be a vector of functions (wrap your function",
+               "in c() if you only have one function)"))
+  if(!all(sapply(funcs, is.function)))
+    stop("funcs contains a member which is not a function")
+  
+  vars <- which(sapply(df, is.numeric) | sapply(df, is.logical))
+  sdf <- as.data.frame(df[, vars])
+  names(sdf) <- names(df)[vars] 
+  rv <- as.data.frame(matrix(NA, nrow = ncol(sdf), ncol = length(funcs)))
+  for (c in 1:length(funcs)) {
+    rv[, c] <- sapply(sdf, function(x) {x <- x[!is.na(x)]; funcs[[c]](x)})
   }
-  ds <- rbind(ds)
-  return(ds)
+  if (!is.null(names(funcs)) && 
+      length(unique(make.names(names(funcs)))) == length(funcs)) 
+    names(rv) <- make.names(names(funcs))
+  rownames(rv) <- names(sdf)
+  return(rv)
 }
 
-mat <- matrix(rnorm(1000), nrow = 100, ncol = 10)
-colnames(mat) <- paste0("numeric", 1:10)
-df <- as.data.frame(mat)
-df$factor1 <- as.factor(sample(LETTERS[1:5], 100, replace = TRUE))
-df$factor2 <- as.factor(sample(letters[6:10], 100, replace = TRUE))
-df$logical <- sample(c(TRUE, FALSE), 100, replace = TRUE) 
-df$character <- sample(c("BLUB", "BLOBB", "BLABB"), 100, replace = TRUE) 
-
-funcs <- c(function(x) sum(is.finite(x)), mean, sd, min, 
-           function(x) quantile(x, 0.25), median, 
-           function(x) quantile(x, 0.75), max)
