@@ -1,5 +1,10 @@
 # create a function
-desc_table <- function(df, funcs){
+desc_table <- function(df, funcs = c(n = function(x) sum(is.finite(x)), 
+                                     mean = mean, sd = sd, min = min, 
+                                     q25 = function(x) quantile(x, 0.25), 
+                                     median = median, 
+                                     q75 = function(x) quantile(x, 0.75), 
+                                     max = max)){
   #df should be a dataframe
   if (class(df) != "data.frame") stop("first argument should be a data frame")
   #funcs should be a vector of functions
@@ -13,15 +18,3 @@ desc_table <- function(df, funcs){
   ds <- rbind(ds)
   return(ds)
 }
-
-mat <- matrix(rnorm(1000), nrow = 100, ncol = 10)
-colnames(mat) <- paste0("numeric", 1:10)
-df <- as.data.frame(mat)
-df$factor1 <- as.factor(sample(LETTERS[1:5], 100, replace = TRUE))
-df$factor2 <- as.factor(sample(letters[6:10], 100, replace = TRUE))
-df$logical <- sample(c(TRUE, FALSE), 100, replace = TRUE) 
-df$character <- sample(c("BLUB", "BLOBB", "BLABB"), 100, replace = TRUE) 
-
-funcs <- c(function(x) sum(is.finite(x)), mean, sd, min, 
-           function(x) quantile(x, 0.25), median, 
-           function(x) quantile(x, 0.75), max)

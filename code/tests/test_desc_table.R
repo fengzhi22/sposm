@@ -11,7 +11,7 @@ setwd("../..")
 context("test parameters of function desc_table()")
 
 test_that("test whether `code/desc_table.R` is present",{
-  expect_true(file.exists("code/desc_table.R"))
+  expect_true(file.exists("code/desc_table_fengzhi.R"))
 })
 
 source("code/desc_table.R")
